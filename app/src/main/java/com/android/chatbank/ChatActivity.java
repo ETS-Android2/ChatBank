@@ -136,7 +136,7 @@ public class ChatActivity extends AppCompatActivity {
 
         adapter = new ChatAdapter(ChatActivity.this, new ArrayList<ChatMessage>());
         messagesContainer.setAdapter(adapter);
-
+        Log.d("trial","Trying....");
         for(int i=0; i<chatHistory.size(); i++) {
             ChatMessage message = chatHistory.get(i);
             displayMessage(message);
