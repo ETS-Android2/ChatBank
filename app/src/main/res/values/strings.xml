@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ChatBank</string>
+    <string name="action_settings">Settings</string>
+    <string name="login">Login</string>
+    <string name="title_activity_chat">ChatBank</string>
+    <string name="typemsg">Type a message</string>
+</resources>
