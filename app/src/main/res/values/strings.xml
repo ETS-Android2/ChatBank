@@ -4,4 +4,7 @@
     <string name="login">Login</string>
     <string name="title_activity_chat">ChatBank</string>
     <string name="typemsg">Type a message</string>
+    <string name="acc_no">"\"ABC123\""</string>
+    <string name="acc_info">"Enter the <b>cpin</b> for your account "</string>
+    <string name="confirm_t">Confirm Transaction</string>
 </resources>
