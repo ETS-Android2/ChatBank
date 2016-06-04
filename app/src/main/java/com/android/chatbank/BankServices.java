@@ -53,6 +53,9 @@ public class BankServices extends ChatActivity{
 
 
     public void recharge(String mobileNo, String amt) {
+            if(mobileNo.length()!=10)
+                chatResponseDisplay("I think you entered wrong mobile number! Please check", 124, false);
+            else
                 showConfirmDialogBox(amt);
 
 
@@ -144,8 +147,8 @@ public class BankServices extends ChatActivity{
 
         private ProgressDialog pDialog;
 
-        private static final String LOGIN_URL = "http://192.168.0.103/bank_recharge_bill.php";
-
+        private static final String LOGIN_URL = "http://192.168.0.104/bank_recharge_bill.php";
+        private  String current_balance,amount;
         private static final String TAG_SUCCESS = "success";
         private static final String TAG_MESSAGE = "message";
 
@@ -168,7 +171,7 @@ public class BankServices extends ChatActivity{
 
                 params.put("acc_no",ChatActivity.ACCOUNT_NUMBER);
                 params.put("amt", args[0]);
-
+                amount = args[0];
                 Log.d("request", "starting");
                 Log.d("request1",params.toString());
 
@@ -198,19 +201,22 @@ public class BankServices extends ChatActivity{
             }
 
             if (json != null) {
-                Toast.makeText(context, json.toString(),
-                        Toast.LENGTH_LONG).show();
+                //Toast.makeText(context, json.toString(),
+                  //      Toast.LENGTH_LONG).show();
 
                 try {
                     success = json.getInt(TAG_SUCCESS);
                     message = json.getString(TAG_MESSAGE);
+                    current_balance = json.getString("balance");
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
 
             if (success == 1) {
-                Log.d("Success!", message);
+                chatResponseDisplay("Recharge done successfully!", 125, false);
+                chatResponseDisplay("Dear user, Rs."+amount+" has been debited from your account "+ChatActivity.ACCOUNT_NUMBER+" and your current balance is Rs."+current_balance, 126, false);
+
             }else{
                 Log.d("Failure", message);
             }
