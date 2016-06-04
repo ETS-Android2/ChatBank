@@ -29,6 +29,9 @@ import java.util.HashMap;
 import java.util.Scanner;
 
 public class ChatActivity extends AppCompatActivity {
+    public static final String ACCOUNT_NUMBER = "ABC123";
+    public static final String CPIN = "123456";
+
     private EditText messageET;
     private ListView messagesContainer;
     private FloatingActionButton fab;
@@ -132,8 +135,7 @@ public class ChatActivity extends AppCompatActivity {
 
     private void functionCall(String functionSelection) {
 
-        Double amt;
-        String mobileNo;
+        String mobileNo,amt;
 
         sc = new Scanner(functionSelection);
         sc.useDelimiter("\\s");
@@ -146,10 +148,10 @@ public class ChatActivity extends AppCompatActivity {
             case "j": bks.billPayment();
                       break;
             case "k": mobileNo = sc.next();
-                      amt = Double.parseDouble(sc.next());
+                      amt = sc.next();
                       bks.recharge(mobileNo, amt);
                       break;
-            case "l": amt = Double.parseDouble(sc.next());
+            case "l": amt = sc.next();
                       bks.recharge(amt);
                       break;
         }

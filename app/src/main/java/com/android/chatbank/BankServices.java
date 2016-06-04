@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by satishc on 03/06/16.
@@ -29,8 +30,10 @@ public class BankServices extends ChatActivity{
     private ListView msgContainer;
     private ChatAdapter cAdapter;
     private Activity context;
+    private CountDownLatch latch;
     private static final String CPIN = "123456";
    // private EditText cpin_input;
+    private boolean cpinConfirmFlag = false,loop=true;
 
     BankServices(ChatAdapter cAdapter,ListView msgContainer,Activity context){
         this.cAdapter = cAdapter;
@@ -40,27 +43,33 @@ public class BankServices extends ChatActivity{
 
     public void billPayment() {
 
-        showConfirmDialogBox("Bill paid successfully!");
+        //showConfirmDialogBox();
+       // new RechargeAndBill().execute();
+        chatResponseDisplay("Bill paid successfully!", 125, false);
+
 
     }
 
-    public void recharge(String mobileNo, Double amt) {
 
-        ChatMessage chatResponse = new ChatMessage();
-        chatResponse.setId(125);//dummy
-        chatResponse.setMessage("Recharge done successfully!");
-        chatResponse.setDate(DateFormat.getDateTimeInstance().format(new Date()));
-        chatResponse.setMe(false);
 
-        displayMessage(chatResponse);
+    public void recharge(String mobileNo, String amt) {
+                showConfirmDialogBox(amt);
+
+
     }
 
-    public void recharge(Double amt) {
+    public void recharge(String amt)  {
+
+                showConfirmDialogBox(amt);
+
+    }
+
+    public void chatResponseDisplay(String s, int i,boolean isMe) {
         ChatMessage chatResponse = new ChatMessage();
-        chatResponse.setId(125);//dummy
-        chatResponse.setMessage("Recharge done successfully!");
+        chatResponse.setId(i);//dummy
+        chatResponse.setMessage(s);
         chatResponse.setDate(DateFormat.getDateTimeInstance().format(new Date()));
-        chatResponse.setMe(false);
+        chatResponse.setMe(isMe);
 
         displayMessage(chatResponse);
     }
@@ -76,87 +85,66 @@ public class BankServices extends ChatActivity{
     }
 
 
-    private void showConfirmDialogBox(final String mesg)
+    private void showConfirmDialogBox(final String amt)
     {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("Confirm Transaction ");
         LayoutInflater li = LayoutInflater.from(context);
         View promptsView = li.inflate(R.layout.dialog_box_prompt, null);
 
-// Set up the input
-       // final EditText cpin_input = (EditText) dialog.findViewById(R.id.cpin_pass);
-// Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+        // Set up the input
+        // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
 
         builder.setView(promptsView);
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
 
-        builder.setPositiveButton("OK", null);
-        //builder.setCancelable(false);
-// Set up the buttons
-        final AlertDialog dialog = builder.create();
-        dialog.show();
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(
-                new View.OnClickListener() {
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    cpinConfirmFlag = false;
+                    loop = false;
+                    dialog.cancel();
+                }
+            });
 
-                    @Override
-                    public void onClick(View v) {
-                        EditText cpin_input = (EditText) dialog.findViewById(R.id.cpin_pass);
-                        String inputPass = cpin_input.getText().toString();
-                        if (inputPass.equals(CPIN)) {
-                            dialog.dismiss();
-                            ChatMessage chatResponse = new ChatMessage();
-                            chatResponse.setId(125);//dummy
-                            chatResponse.setMessage(mesg);
-                            chatResponse.setDate(DateFormat.getDateTimeInstance().format(new Date()));
-                            chatResponse.setMe(false);
+            builder.setPositiveButton("OK", null);
+            // Set up the buttons
+            final AlertDialog dialog = builder.create();
+            dialog.show();
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(
+                    new View.OnClickListener() {
 
-                            displayMessage(chatResponse);
+                        @Override
+                        public void onClick(View v) {
+                            EditText cpin_input = (EditText) dialog.findViewById(R.id.cpin_pass);
+                            String inputPass = cpin_input.getText().toString();
+                            if (inputPass.equals(CPIN)) {
 
-                        } else {
-                            Toast.makeText(context, "Invalid cPIN !", Toast.LENGTH_SHORT).show();
-                            return;
+                                //cpinConfirmFlag = true;
+                                new RechargeAndBill().execute(amt);
+                                dialog.dismiss();
+
+
+                            } else {
+                                Toast.makeText(context, "Invalid cPIN !", Toast.LENGTH_SHORT).show();
+                                //cpinConfirmFlag = false;
+
+                                return;
+
+                            }
                         }
-                    }
-                });
-        /*builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String inputPass = cpin_input.getText().toString();
-
-                if (inputPass.equals(CPIN)) {
-                    dialog.dismiss();
-                    ChatMessage chatResponse = new ChatMessage();
-                    chatResponse.setId(125);//dummy
-                    chatResponse.setMessage(mesg);
-                    chatResponse.setDate(DateFormat.getDateTimeInstance().format(new Date()));
-                    chatResponse.setMe(false);
-
-                    displayMessage(chatResponse);
-
-                }
-                else
-                {
-                    Toast.makeText(context,"Invalid cPIN !",Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-            }
-        });*/
+                    });
 
 
-        //builder.show();
+
+
+
     }
     class RechargeAndBill extends AsyncTask<String, String, JSONObject> {
         JSONParser jsonParser = new JSONParser();
 
         private ProgressDialog pDialog;
 
-        private static final String LOGIN_URL = "http://www.example.com/testPost.php";
+        private static final String LOGIN_URL = "http://192.168.0.103/bank_recharge_bill.php";
 
         private static final String TAG_SUCCESS = "success";
         private static final String TAG_MESSAGE = "message";
@@ -165,7 +153,7 @@ public class BankServices extends ChatActivity{
         @Override
         protected void onPreExecute() {
             pDialog = new ProgressDialog(context);
-            pDialog.setMessage("Attempting login...");
+            pDialog.setMessage("Attempting transaction...");
             pDialog.setIndeterminate(false);
             pDialog.setCancelable(true);
             pDialog.show();
@@ -177,13 +165,14 @@ public class BankServices extends ChatActivity{
             try {
 
                 HashMap<String, String> params = new HashMap<>();
-                params.put("name", args[0]);
-                params.put("password", args[1]);
+
+                params.put("acc_no",ChatActivity.ACCOUNT_NUMBER);
+                params.put("amt", args[0]);
 
                 Log.d("request", "starting");
+                Log.d("request1",params.toString());
 
-                JSONObject json = jsonParser.makeHttpRequest(
-                        LOGIN_URL, "POST", params);
+                JSONObject json = jsonParser.makeHttpRequest(LOGIN_URL, "POST", params);
 
                 if (json != null) {
                     Log.d("JSON result", json.toString());
@@ -192,6 +181,7 @@ public class BankServices extends ChatActivity{
                 }
 
             } catch (Exception e) {
+                Log.d("ee1", "exception error");
                 e.printStackTrace();
             }
 
