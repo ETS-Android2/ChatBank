@@ -234,6 +234,11 @@ public class ChatActivity extends AppCompatActivity {
             case "l": amt = sc.next();
                       bks.recharge(amt);
                       break;
+            case "tr":  String ben_acc_no = sc.next();
+                        amt = sc.next();
+                        bks.transfer(ben_acc_no,amt);
+                        break;
+
         }
 
     }

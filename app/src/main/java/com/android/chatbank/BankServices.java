@@ -56,16 +56,21 @@ public class BankServices extends ChatActivity{
             if(mobileNo.length()!=10)
                 chatResponseDisplay("I think you entered wrong mobile number! Please check", 124, false);
             else
-                showConfirmDialogBox(amt);
+                showConfirmDialogBox("r",amt);
 
 
     }
 
     public void recharge(String amt)  {
 
-                showConfirmDialogBox(amt);
+                showConfirmDialogBox("r",amt);
 
     }
+
+    public void transfer(String ben_acc_no, String amt) {
+                showConfirmDialogBox("tr",ben_acc_no,amt);
+    }
+
 
     public void chatResponseDisplay(String s, int i,boolean isMe) {
         ChatMessage chatResponse = new ChatMessage();
@@ -88,7 +93,7 @@ public class BankServices extends ChatActivity{
     }
 
 
-    private void showConfirmDialogBox(final String amt)
+    private void showConfirmDialogBox(final String... par)
     {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("Confirm Transaction ");
@@ -123,7 +128,12 @@ public class BankServices extends ChatActivity{
                             if (inputPass.equals(CPIN)) {
 
                                 //cpinConfirmFlag = true;
-                                new RechargeAndBill().execute(amt);
+                                switch (par[0]) {
+                                    case "r" : new RechargeAndBill().execute(par[1]);
+                                               break;
+                                    case "tr" : new MoneyTransfer().execute(par[1],par[2]);
+                                                break;
+                                }
                                 dialog.dismiss();
 
 
@@ -142,6 +152,9 @@ public class BankServices extends ChatActivity{
 
 
     }
+
+
+
     class RechargeAndBill extends AsyncTask<String, String, JSONObject> {
         JSONParser jsonParser = new JSONParser();
 
@@ -215,6 +228,89 @@ public class BankServices extends ChatActivity{
 
             if (success == 1) {
                 chatResponseDisplay("Recharge done successfully!", 125, false);
+                chatResponseDisplay("Dear user, Rs."+amount+" has been debited from your account "+ChatActivity.ACCOUNT_NUMBER+" and your current balance is Rs."+current_balance, 126, false);
+
+            }else{
+                Log.d("Failure", message);
+            }
+        }
+
+    }
+    class MoneyTransfer extends AsyncTask<String, String, JSONObject> {
+        JSONParser jsonParser = new JSONParser();
+
+        private ProgressDialog pDialog;
+
+        private static final String LOGIN_URL = "http://192.168.0.104/bank_money_transfer.php";
+        private  String current_balance,amount,ben_acc_no;
+        private static final String TAG_SUCCESS = "success";
+        private static final String TAG_MESSAGE = "message";
+
+
+        @Override
+        protected void onPreExecute() {
+            pDialog = new ProgressDialog(context);
+            pDialog.setMessage("Attempting transaction...");
+            pDialog.setIndeterminate(false);
+            pDialog.setCancelable(true);
+            pDialog.show();
+        }
+
+        @Override
+        protected JSONObject doInBackground(String... args) {
+
+            try {
+
+                HashMap<String, String> params = new HashMap<>();
+
+                params.put("acc_no",ChatActivity.ACCOUNT_NUMBER);
+                params.put("ben_acc_no", args[0]);
+                params.put("amt", args[1]);
+                amount = args[1];
+                ben_acc_no = args[0];
+                Log.d("request", "starting");
+                Log.d("request1",params.toString());
+
+                JSONObject json = jsonParser.makeHttpRequest(LOGIN_URL, "POST", params);
+
+                if (json != null) {
+                    Log.d("JSON result", json.toString());
+
+                    return json;
+                }
+
+            } catch (Exception e) {
+                Log.d("ee1", "exception error");
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        protected void onPostExecute(JSONObject json) {
+
+            int success = 0;
+            String message = "";
+
+            if (pDialog != null && pDialog.isShowing()) {
+                pDialog.dismiss();
+            }
+
+            if (json != null) {
+                //Toast.makeText(context, json.toString(),
+                  //      Toast.LENGTH_LONG).show();
+
+                try {
+                    success = json.getInt(TAG_SUCCESS);
+                    message = json.getString(TAG_MESSAGE);
+                    current_balance = json.getString("balance");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (success == 1) {
+                chatResponseDisplay("Rs. "+amount+" transfered to a/c. no.: "+ben_acc_no+" successfully!", 126, false);
                 chatResponseDisplay("Dear user, Rs."+amount+" has been debited from your account "+ChatActivity.ACCOUNT_NUMBER+" and your current balance is Rs."+current_balance, 126, false);
 
             }else{
