@@ -1,8 +1,10 @@
 package com.android.chatbank;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -40,6 +42,8 @@ public class ChatActivity extends AppCompatActivity {
     private static final String BOTNAME = "chatbank";
     private String path,clientResponse,response;
 
+    final static String PREFS_NAME = "MyPrefsFile";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,9 +51,24 @@ public class ChatActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-
+        firstTimeSettings();
 
         initialControls();
+    }
+
+    private void firstTimeSettings() {
+
+        SharedPreferences firstTimeSettings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        if(!firstTimeSettings.contains("my_first_time")){
+            Log.d("first_time","chat activity first tym!");
+            SharedPreferences.Editor editorFirst = firstTimeSettings.edit();
+            editorFirst.putBoolean("my_first_time",true);
+            editorFirst.commit();
+        }
+
+
+
+
     }
 
     @Override
@@ -68,7 +87,7 @@ public class ChatActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            startActivity(new Intent(ChatActivity.this,LoginActivity.class));
+            startActivity(new Intent(ChatActivity.this,SettingActivity.class));
             return true;
         }
 

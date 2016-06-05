@@ -13,4 +13,6 @@
     <string name="title_activity_setting">Settings</string>
     <string name="t_limit">Daily transaction limit</string>
     <string name="limit_r">Max limit : Rs.</string>
+    <string name="fav_t">Favourite transactions</string>
+    <string name="save">Save</string>
 </resources>
