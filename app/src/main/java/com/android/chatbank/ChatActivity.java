@@ -1,9 +1,11 @@
 package com.android.chatbank;
 
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -13,6 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,6 +38,11 @@ public class ChatActivity extends AppCompatActivity {
     static  String ACCOUNT_NUMBER = "ABC123";
     static  String CPIN = "123456";
 
+    private BroadcastReceiver m_dateChangedReceiver;
+    static int TRANSACTION_LIMIT;
+    static int CURRENT_TRANSACTION_VALUE;
+
+
     private EditText messageET;
     private ListView messagesContainer;
     private FloatingActionButton fab;
@@ -54,25 +62,79 @@ public class ChatActivity extends AppCompatActivity {
         setContentView(R.layout.activity_chat);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+//------------Detecting date change-------------------------------------------------------------------------------------
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_TIME_CHANGED);
+        m_dateChangedReceiver = new BroadcastReceiver() {
+
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                final String action = intent.getAction();
+                if (Intent.ACTION_DATE_CHANGED.equals(action) || Intent.ACTION_TIME_CHANGED.equals(action)){
+                    CURRENT_TRANSACTION_VALUE =0;
+                    SharedPreferences trChange = getSharedPreferences("TransactionChange", Context.MODE_PRIVATE);
+                    SharedPreferences.Editor trChangeEitor = trChange.edit();
+                    trChangeEitor.putInt("CurrentTransactionValue",CURRENT_TRANSACTION_VALUE);
+                    trChangeEitor.commit();
+                }
+
+            }
+        };
+        registerReceiver(m_dateChangedReceiver, filter);
+//----------------------------------------------------------------------------------------------------------------------
 
         firstTimeSettings();
+        initializingTransactionValue();
 
         initialControls();
+    }
+
+    private void initializingTransactionValue() {
+        SharedPreferences initTransaction = getSharedPreferences("Settings Data", Context.MODE_PRIVATE);
+        TRANSACTION_LIMIT = initTransaction.getInt("transaction_limit",0);
+        Log.d("ttt_val","initializing val in chat act :"+TRANSACTION_LIMIT);
+
+        SharedPreferences initCurrentTransaction = getSharedPreferences("TransactionChange", Context.MODE_PRIVATE);
+        CURRENT_TRANSACTION_VALUE = initCurrentTransaction.getInt("CurrentTransactionValue",0);
+        Log.d("tt_val","initializing curr val in chat act :"+CURRENT_TRANSACTION_VALUE);
     }
 
     private void firstTimeSettings() {
 
         SharedPreferences firstTimeSettings = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         if(!firstTimeSettings.contains("my_first_time")){
-            Log.d("first_time","chat activity first tym!");
+
+
             SharedPreferences.Editor editorFirst = firstTimeSettings.edit();
             editorFirst.putBoolean("my_first_time",true);
             editorFirst.commit();
+
+            SharedPreferences trChange = getSharedPreferences("TransactionChange", Context.MODE_PRIVATE);
+            SharedPreferences.Editor trChangeEitor = trChange.edit();
+            trChangeEitor.putInt("CurrentTransactionValue",0);
+            trChangeEitor.commit();
         }
 
 
 
 
+    }
+    //2.0 and above
+    @Override
+    public void onBackPressed() {
+       // moveTaskToBack(true);
+        logout();
+    }
+
+    // Before 2.0
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            //moveTaskToBack(true);
+            logout();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
     @Override
@@ -81,6 +143,7 @@ public class ChatActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_chat, menu);
         return true;
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -98,38 +161,7 @@ public class ChatActivity extends AppCompatActivity {
 
         if (id == R.id.logout) {
 
-
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-                    this);
-
-            alertDialogBuilder.setTitle("Logout");
-            alertDialogBuilder.setMessage(R.string.logout_msg);
-            // set dialog message
-            alertDialogBuilder
-                    .setPositiveButton("OK",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog,int id) {
-                                    //logout to login page
-                                    //ChatActivity.ACCOUNT_NUMBER = "";
-                                    //ChatActivity.CPIN="";
-                                    startActivity(new Intent(ChatActivity.this,LoginActivity.class));
-
-                                }
-                            })
-                    .setNegativeButton("Cancel",
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog,int id) {
-                                    dialog.cancel();
-                                }
-                            });
-
-            // create alert dialog
-            AlertDialog alertDialog = alertDialogBuilder.create();
-
-            // show it
-            alertDialog.show();
-
-
+            logout();
             return true;
         }
 
@@ -138,6 +170,39 @@ public class ChatActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private void logout()
+    {
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                this);
+
+        alertDialogBuilder.setTitle("Logout");
+        alertDialogBuilder.setMessage(R.string.logout_msg);
+        // set dialog message
+        alertDialogBuilder
+                .setPositiveButton("OK",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,int id) {
+                                //logout to login page
+                                //ChatActivity.ACCOUNT_NUMBER = "";
+                                //ChatActivity.CPIN="";
+                                startActivity(new Intent(ChatActivity.this,LoginActivity.class));
+
+                            }
+                        })
+                .setNegativeButton("Cancel",
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog,int id) {
+                                dialog.cancel();
+                            }
+                        });
+
+        // create alert dialog
+        AlertDialog alertDialog = alertDialogBuilder.create();
+
+        // show it
+        alertDialog.show();
+
+    }
     private void initialControls() {
         messagesContainer = (ListView) findViewById(R.id.messageContainer);
         messageET = (EditText) findViewById(R.id.chatMessage);
@@ -178,39 +243,148 @@ public class ChatActivity extends AppCompatActivity {
                     }
                 }
 
+                //Checking from favourite list-----------------------------------------------------------------
+                String request = messageText;
+
+                int favNumber = 0;
+                if(messageText.equalsIgnoreCase("Do 1"))
+                    favNumber=1;
+                else if(messageText.equalsIgnoreCase("Do 2"))
+                    favNumber=2;
+                else if(messageText.equalsIgnoreCase("Do 3"))
+                    favNumber=3;
+                else if(messageText.equalsIgnoreCase("Do 4"))
+                    favNumber=4;
+                else if(messageText.equalsIgnoreCase("Do 5"))
+                    favNumber=5;
+                else
+                    favNumber=6;
+
+                SharedPreferences mappingRequest;
+                ChatMessage messageRequest;
+                boolean flag_map = true;
+                switch(favNumber)
+                {
+                    case 1:  mappingRequest = getSharedPreferences("Settings Data", Context.MODE_PRIVATE);
+                            request = mappingRequest.getString("fav_trans_1", SettingActivity.DEFAULT_STRING);
+                            if(request.equals("N/A") || request.equals("")) {
+                                flag_map = false;
+                                messageRequest = new ChatMessage();
+                                messageRequest.setMe(true);
+                                messageRequest.setMessage("Sorry, but you haven't defined any action! Please check the settings.");
+                            }
+                            else {
+                                flag_map = true;
+                                messageRequest = new ChatMessage();
+                                messageRequest.setMe(true);
+                                messageRequest.setMessage("Performing your favourite action : " + request);
+                            }
+                            displayMessageAndInsert(messageRequest);
+                            break;
+                    case 2:  mappingRequest = getSharedPreferences("Settings Data",Context.MODE_PRIVATE);
+                            request = mappingRequest.getString("fav_trans_2", SettingActivity.DEFAULT_STRING);
+                            if(request.equals("N/A") || request.equals("")) {
+                            flag_map = false;
+                            messageRequest = new ChatMessage();
+                            messageRequest.setMe(true);
+                            messageRequest.setMessage("Sorry, but you haven't defined any action! Please check the settings.");
+                            }
+                            else {
+                                flag_map = true;
+                            messageRequest = new ChatMessage();
+                            messageRequest.setMe(true);
+                            messageRequest.setMessage("Performing your favourite action : " + request);
+                            }
+                            displayMessageAndInsert(messageRequest);
+                            break;
+                    case 3:  mappingRequest = getSharedPreferences("Settings Data",Context.MODE_PRIVATE);
+                            request = mappingRequest.getString("fav_trans_3", SettingActivity.DEFAULT_STRING);
+                            if(request.equals("N/A") || request.equals("")) {
+                            flag_map = false;
+                            messageRequest = new ChatMessage();
+                            messageRequest.setMe(true);
+                            messageRequest.setMessage("Sorry, but you haven't defined any action! Please check the settings.");
+                            }
+                            else {
+                                flag_map = true;
+                            messageRequest = new ChatMessage();
+                            messageRequest.setMe(true);
+                            messageRequest.setMessage("Performing your favourite action : " + request);
+                            }
+                            displayMessageAndInsert(messageRequest);
+                            break;
+                    case 4:  mappingRequest = getSharedPreferences("Settings Data",Context.MODE_PRIVATE);
+                            request = mappingRequest.getString("fav_trans_4", SettingActivity.DEFAULT_STRING);
+                            if(request.equals("N/A") || request.equals("")) {
+                            flag_map = false;
+                            messageRequest = new ChatMessage();
+                            messageRequest.setMe(true);
+                            messageRequest.setMessage("Sorry, but you haven't defined any action! Please check the settings.");
+                            }
+                            else {
+                                flag_map = true;
+                            messageRequest = new ChatMessage();
+                            messageRequest.setMe(true);
+                            messageRequest.setMessage("Performing your favourite action : " + request);
+                            }
+                            displayMessageAndInsert(messageRequest);
+                            break;
+                    case 5:  mappingRequest = getSharedPreferences("Settings Data",Context.MODE_PRIVATE);
+                            request = mappingRequest.getString("fav_trans_5", SettingActivity.DEFAULT_STRING);
+                            if(request.equals("N/A") || request.equals("")) {
+                            flag_map = false;
+                            messageRequest = new ChatMessage();
+                            messageRequest.setMe(true);
+                            messageRequest.setMessage("Sorry, but you haven't defined any action! Please check the settings.");
+                            }
+                            else {
+                                flag_map = true;
+                            messageRequest = new ChatMessage();
+                            messageRequest.setMe(true);
+                            messageRequest.setMessage("Performing your favourite action : " + request);
+                            }
+                            displayMessageAndInsert(messageRequest);
+                            break;
+                    case 6: request = messageText;
+                            flag_map = true;
+                            break;
+                    default:Log.d("error_map","Error while mapping requests!");
+
+                }
+                //------------------------------------------------------------------------------------------------
+
                 path = getExternalFilesDir(null).getAbsolutePath();
                 Bot bot = new Bot(BOTNAME, path);
                 Chat chatSession = new Chat(bot);
-                String request = messageText;
-                //String request = "What is your name?";
-                response = chatSession.multisentenceRespond(request);
+                if(flag_map) {
+                    response = chatSession.multisentenceRespond(request);
 
-                Log.d("response", response);
+                    Log.d("response", response);
 
-                sc = new Scanner(response);
-                sc.useDelimiter("\\|");
+                    sc = new Scanner(response);
+                    sc.useDelimiter("\\|");
 
 
-                //Response to be given to the client
-                clientResponse = sc.next();
-                Log.d("res",clientResponse);
+                    //Response to be given to the client
+                    clientResponse = sc.next();
+                    Log.d("res", clientResponse);
 
-                //Remaining part of string to detect the appropriate function
-                if(sc.hasNext()) {
-                    String functionSelection = sc.next();
-                    Log.d("fres", functionSelection);
-                    functionCall(functionSelection);
+                    //Remaining part of string to detect the appropriate function
+                    if (sc.hasNext()) {
+                        String functionSelection = sc.next();
+                        Log.d("fres", functionSelection);
+                        functionCall(functionSelection);
+                    }
+
+                    ChatMessage chatResponse = new ChatMessage();
+                    chatResponse.setId(125);//dummy
+                    chatResponse.setMessage(clientResponse);
+                    chatResponse.setDate(sdf.format(new Date()));
+                    chatResponse.setMe(false);
+
+
+                    displayMessageAndInsert(chatResponse);
                 }
-
-                ChatMessage chatResponse = new ChatMessage();
-                chatResponse.setId(125);//dummy
-                chatResponse.setMessage(clientResponse);
-                chatResponse.setDate(sdf.format(new Date()));
-                chatResponse.setMe(false);
-
-
-                displayMessageAndInsert(chatResponse);
-
             }
         });
 
@@ -242,6 +416,8 @@ public class ChatActivity extends AppCompatActivity {
             case "tr":  String ben_acc_no = sc.next();
                         amt = sc.next();
                         bks.transfer(ben_acc_no,amt);
+                        break;
+            case "cri": bks.creditCardInfo();
                         break;
 
         }
@@ -303,7 +479,6 @@ public class ChatActivity extends AppCompatActivity {
             isMeInt = getDataCursor.getInt(0);
             isMe = (isMeInt==1)?true:false;
 
-            Log.d("data_bef", "Data after insert : " + isMe + " " + msg + " " + dateSt);
 
             historyChat.setMe(isMe);
             historyChat.setMessage(msg);

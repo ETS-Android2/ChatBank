@@ -25,6 +25,9 @@
             android:name=".ChatActivity"
             android:label="@string/title_activity_chat"
             android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.DATE_CHANGED"></action>
+            </intent-filter>
         </activity>
         <activity
             android:name=".SettingActivity"

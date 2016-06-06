@@ -47,7 +47,6 @@ public class BankDbHelper extends SQLiteOpenHelper {
 
     public long addChat(ChatMessage message,SQLiteDatabase bankDb) {
         long res=0;
-        Log.d("data_before","Data before insert : "+message.getIsMe()+" "+message.getMessage()+" "+message.getDate());
         int isMe = message.getIsMe()?1:0;
         ContentValues ct = new ContentValues();
         ct.put(IS_ME, isMe);
