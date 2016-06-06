@@ -3,10 +3,8 @@ package com.android.chatbank;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
-import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -76,17 +74,17 @@ public class BankServices extends ChatActivity{
         ChatMessage chatResponse = new ChatMessage();
         chatResponse.setId(i);//dummy
         chatResponse.setMessage(s);
-        chatResponse.setDate(DateFormat.getDateTimeInstance().format(new Date()));
+        chatResponse.setDate(sdf.format(new Date()));
         chatResponse.setMe(isMe);
 
-        displayMessage(chatResponse);
+        displayMessageAndInsert(chatResponse);
     }
 
-    public void displayMessage(ChatMessage message) {
+    /*public void displayMessageAndInsert(ChatMessage message) {
         cAdapter.add(message);
         cAdapter.notifyDataSetChanged();
         scroll();
-    }
+    }*/
 
     private void scroll() {
         msgContainer.setSelection(msgContainer.getCount() - 1);
@@ -241,7 +239,7 @@ public class BankServices extends ChatActivity{
 
         private ProgressDialog pDialog;
 
-        private static final String LOGIN_URL = "http://192.168.0.104/bank_money_transfer.php";
+        private static final String LOGIN_URL = "http://192.168.0.103/bank_money_transfer.php";
         private  String current_balance,amount,ben_acc_no;
         private static final String TAG_SUCCESS = "success";
         private static final String TAG_MESSAGE = "message";
@@ -314,7 +312,14 @@ public class BankServices extends ChatActivity{
                 chatResponseDisplay("Dear user, Rs."+amount+" has been debited from your account "+ChatActivity.ACCOUNT_NUMBER+" and your current balance is Rs."+current_balance, 126, false);
 
             }else{
+
                 Log.d("Failure", message);
+                if(message.equals("Insufficient balance !"))
+                    chatResponseDisplay("Dear user, your account "+ChatActivity.ACCOUNT_NUMBER+" don't have sufficient amount to be transfered.Sorry the transfer cannot be completed !", 127, false);
+                else if(message.equals("Invalid account number !"))
+                    chatResponseDisplay("Sorry, the transfer cannot be completed due to invalid  account no.: "+ben_acc_no+". Please check the beneficiary account number !", 128, false);
+                else
+                    chatResponseDisplay("Sorry, the transfer cannot be completed due to some internal error! Try again later.", 129, false);
             }
         }
 

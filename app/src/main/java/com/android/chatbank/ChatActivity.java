@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -17,13 +19,14 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 import org.alicebot.ab.Bot;
 import org.alicebot.ab.Chat;
 
 import java.io.File;
 import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
@@ -41,7 +44,8 @@ public class ChatActivity extends AppCompatActivity {
     private BankServices bks;
     private static final String BOTNAME = "chatbank";
     private String path,clientResponse,response;
-
+    private BankDbHelper dbHelper;
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     final static String PREFS_NAME = "MyPrefsFile";
 
     @Override
@@ -154,13 +158,13 @@ public class ChatActivity extends AppCompatActivity {
                 }
 
                 ChatMessage chatMessage = new ChatMessage();
-                chatMessage.setId(122);//dummy
+                //chatMessage.setId(122);//dummy
                 chatMessage.setMessage(messageText);
-                chatMessage.setDate(DateFormat.getDateTimeInstance().format(new Date()));
+                chatMessage.setDate(sdf.format(new Date()));
                 chatMessage.setMe(true);
                 messageET.setText("");
 
-                displayMessage(chatMessage);
+                displayMessageAndInsert(chatMessage);
 
                 File fileExt = new File(getExternalFilesDir(null).getAbsolutePath() + "/bots");
 
@@ -201,11 +205,11 @@ public class ChatActivity extends AppCompatActivity {
                 ChatMessage chatResponse = new ChatMessage();
                 chatResponse.setId(125);//dummy
                 chatResponse.setMessage(clientResponse);
-                chatResponse.setDate(DateFormat.getDateTimeInstance().format(new Date()));
+                chatResponse.setDate(sdf.format(new Date()));
                 chatResponse.setMe(false);
 
 
-                displayMessage(chatResponse);
+                displayMessageAndInsert(chatResponse);
 
             }
         });
@@ -219,6 +223,7 @@ public class ChatActivity extends AppCompatActivity {
 
         sc = new Scanner(functionSelection);
         sc.useDelimiter("\\s");
+        Log.d("rem", functionSelection);
         String functionPattern = sc.next();//Function Alphabet
         Log.d("f1res", functionPattern);
 
@@ -243,11 +248,34 @@ public class ChatActivity extends AppCompatActivity {
 
     }
 
-    public void displayMessage(ChatMessage message) {
+    public void displayMessageAndInsert(ChatMessage message) {
+
+
         adapter.add(message);
         adapter.notifyDataSetChanged();
         scroll();
+        dbHelper = new BankDbHelper(ChatActivity.this);
+        SQLiteDatabase bankDb = dbHelper.getWritableDatabase();
+        long result = dbHelper.addChat(message,bankDb);
+        if(result<0)
+        {
+            Log.d("Error1","Error in inserting..");
+        }
+        else
+        {
+            Log.d("Success1","Chat message inserted successfully..");
+        }
     }
+
+    public void displayMessage(ChatMessage message) {
+
+        Log.d("d1","display only");
+        adapter.add(message);
+        adapter.notifyDataSetChanged();
+        scroll();
+
+    }
+
 
     private void scroll() {
         messagesContainer.setSelection(messagesContainer.getCount() - 1);
@@ -255,28 +283,48 @@ public class ChatActivity extends AppCompatActivity {
 
     private void loadDummyHistory(){
 
+        boolean isMe;
+        int isMeInt;
+        String date;
+        dbHelper = new BankDbHelper(ChatActivity.this);
+        SQLiteDatabase bankDb = dbHelper.getWritableDatabase();
+        Cursor getDataCursor = dbHelper.getAllChats(bankDb);
+
+
+
+
         chatHistory = new ArrayList<ChatMessage>();
 
-        ChatMessage msg = new ChatMessage();
-        msg.setId(1);
-        msg.setMe(false);
-        msg.setMessage("Hi");
-        msg.setDate(DateFormat.getDateTimeInstance().format(new Date()));
-        chatHistory.add(msg);
-        ChatMessage msg1 = new ChatMessage();
-        msg1.setId(2);
-        msg1.setMe(false);
-        msg1.setMessage("How r u doing???");
-        msg1.setDate(DateFormat.getDateTimeInstance().format(new Date()));
-        chatHistory.add(msg1);
+        ChatMessage historyChat ;
+        while(getDataCursor.moveToNext()){
+            historyChat = new ChatMessage();
+            String msg = getDataCursor.getString(1);
+            String dateSt = getDataCursor.getString(2);
+            isMeInt = getDataCursor.getInt(0);
+            isMe = (isMeInt==1)?true:false;
+
+            Log.d("data_bef", "Data after insert : " + isMe + " " + msg + " " + dateSt);
+
+            historyChat.setMe(isMe);
+            historyChat.setMessage(msg);
+            historyChat.setDate(dateSt);
+
+            chatHistory.add(historyChat);
+
+
+        }
+
 
         adapter = new ChatAdapter(ChatActivity.this, new ArrayList<ChatMessage>());
         messagesContainer.setAdapter(adapter);
+
         Log.d("trial","Trying....");
+
         for(int i=0; i<chatHistory.size(); i++) {
             ChatMessage message = chatHistory.get(i);
             displayMessage(message);
         }
+
     }
 
 
