@@ -18,10 +18,8 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-
 import org.alicebot.ab.Bot;
 import org.alicebot.ab.Chat;
-
 import java.io.File;
 import java.text.DateFormat;
 import java.util.ArrayList;
@@ -95,8 +93,7 @@ public class ChatActivity extends AppCompatActivity {
         if (id == R.id.logout) {
 
 
-            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-                    this);
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
 
             alertDialogBuilder.setTitle("Logout");
             alertDialogBuilder.setMessage(R.string.logout_msg);
@@ -216,7 +213,7 @@ public class ChatActivity extends AppCompatActivity {
     private void functionCall(String functionSelection) {
 
         String mobileNo,amt;
-
+        BankServices bks;
         sc = new Scanner(functionSelection);
         sc.useDelimiter("\\s");
         String functionPattern = sc.next();//Function Alphabet
@@ -227,10 +224,10 @@ public class ChatActivity extends AppCompatActivity {
         {
             case "j": bks.billPayment();
                       break;
-            case "k": mobileNo = sc.next();
+            /*case "k": mobileNo = sc.next();
                       amt = sc.next();
                       bks.recharge(mobileNo, amt);
-                      break;
+                      break;*/
             case "l": amt = sc.next();
                       bks.recharge(amt);
                       break;
@@ -238,6 +235,16 @@ public class ChatActivity extends AppCompatActivity {
                         amt = sc.next();
                         bks.transfer(ben_acc_no,amt);
                         break;
+            case "ab":
+                bks.dispAccountBalance();
+                break;
+            case "k":
+                String no="3";
+                        //sc.next();
+                String what="y";
+                    //sc.next();
+                bks.dispAccountStatements(no,what);
+                break;
 
         }
 

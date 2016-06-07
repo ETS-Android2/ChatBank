@@ -14,10 +14,12 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
@@ -39,6 +41,18 @@ public class BankServices extends ChatActivity{
         this.cAdapter = cAdapter;
         this.msgContainer = msgContainer;
         this.context = context;
+    }
+
+    public void dispAccountStatements(String no,String what)  {
+
+        showConfirmDialogBox("as",no,what);
+
+    }
+
+    public void dispAccountBalance()  {
+
+        showConfirmDialogBox("ab");
+
     }
 
     public void billPayment() {
@@ -81,6 +95,8 @@ public class BankServices extends ChatActivity{
 
         displayMessage(chatResponse);
     }
+
+
 
     public void displayMessage(ChatMessage message) {
         cAdapter.add(message);
@@ -129,10 +145,18 @@ public class BankServices extends ChatActivity{
 
                                 //cpinConfirmFlag = true;
                                 switch (par[0]) {
-                                    case "r" : new RechargeAndBill().execute(par[1]);
-                                               break;
-                                    case "tr" : new MoneyTransfer().execute(par[1],par[2]);
-                                                break;
+                                    case "r":
+                                        new RechargeAndBill().execute(par[1]);
+                                        break;
+                                    case "tr":
+                                        new MoneyTransfer().execute(par[1], par[2]);
+                                        break;
+                                    case "ab":
+                                        new AccountBalance().execute();
+                                        break;
+                                    case "as":
+                                        new AccountStatements().execute(par[1],par[2]);
+                                        break;
                                 }
                                 dialog.dismiss();
 
@@ -154,7 +178,177 @@ public class BankServices extends ChatActivity{
     }
 
 
+    class AccountStatements extends AsyncTask<String, String, JSONObject> {
+        JSONParser jsonParser = new JSONParser();
 
+        private ProgressDialog pDialog;
+
+        private static final String LOGIN_URL = "http://192.168.0.104/bank_account_statements.php";
+        private  String current_balance,amount;
+        private static final String TAG_SUCCESS = "success";
+        private int count=0;
+        JSONArray myListsAll;
+        JSONObject jsonobject;
+
+        @Override
+        protected void onPreExecute() {
+            pDialog = new ProgressDialog(context);
+            pDialog.setMessage("Fetching");
+            pDialog.setIndeterminate(false);
+            pDialog.setCancelable(true);
+            pDialog.show();
+        }
+
+        @Override
+        protected JSONObject doInBackground(String... args) {
+
+            try {
+
+                HashMap<String, String> params = new HashMap<>();
+
+                params.put("acc_no",ChatActivity.ACCOUNT_NUMBER);
+                params.put("no_of",args[0]);
+                params.put("what",args[1]);
+                Log.d("request", "starting");
+                Log.d("request1",params.toString());
+
+                JSONObject json = jsonParser.makeHttpRequest(LOGIN_URL, "POST", params);
+
+                if (json != null) {
+                    Log.d("JSON result", json.toString());
+
+                    return json;
+                }
+
+            } catch (Exception e) {
+                Log.d("ee1", "exception error");
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        protected void onPostExecute(JSONObject json) {
+
+            int success = 0;
+            String message = "";
+
+            if (pDialog != null && pDialog.isShowing()) {
+                pDialog.dismiss();
+            }
+
+            //if (success == 1) {
+                String statement="Date\tDescription\t\tRef\t\tWithdrawals\tDeposits\tBalance\n";
+try {
+    myListsAll = json.getJSONArray("jsonData");
+    Log.d("result123",myListsAll.toString());
+}
+catch (JSONException e){
+    e.printStackTrace();
+}
+                for(int i=0;i<myListsAll.length();i++){
+                    try {
+                        jsonobject = (JSONObject) myListsAll.get(i);
+
+                        statement=statement.concat(jsonobject.optString("date") + "\t" + jsonobject.optString("description") +
+                                "\t\t" + jsonobject.optString("ref") + "\t" + jsonobject.optString("withdrawals") + "\t"
+                                + jsonobject.optString("deposits") + "\t" + jsonobject.optString("balance") + "\n");
+                    }catch (JSONException e){
+                        e.printStackTrace();
+                    }
+
+
+                }
+
+                chatResponseDisplay(statement, 125, false);
+            //else{
+              //  Log.d("Failure", message);
+            //}
+        }
+
+    }
+    class AccountBalance extends AsyncTask<String, String, JSONObject> {
+        JSONParser jsonParser = new JSONParser();
+
+        private ProgressDialog pDialog;
+
+        private static final String LOGIN_URL = "http://192.168.0.104/bank_check_balance.php";
+        private  String current_balance;
+        private static final String TAG_SUCCESS = "success";
+        private static final String TAG_MESSAGE = "message";
+
+
+        @Override
+        protected void onPreExecute() {
+            pDialog = new ProgressDialog(context);
+            pDialog.setMessage("Fetching...");
+            pDialog.setIndeterminate(false);
+            pDialog.setCancelable(true);
+            pDialog.show();
+        }
+
+        @Override
+        protected JSONObject doInBackground(String... args) {
+
+            try {
+
+                HashMap<String, String> params = new HashMap<>();
+
+                params.put("acc_no",ChatActivity.ACCOUNT_NUMBER);
+                Log.d("request", "starting");
+                Log.d("request1",params.toString());
+
+                JSONObject json = jsonParser.makeHttpRequest(LOGIN_URL, "POST", params);
+                Log.d("request2","here1");
+                if (json != null) {
+
+                    Log.d("JSON result", json.toString());
+
+                    return json;
+                }
+
+            } catch (Exception e) {
+                Log.d("ee1", "exception error");
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        protected void onPostExecute(JSONObject json) {
+
+            int success = 0;
+            String message = "";
+
+            if (pDialog != null && pDialog.isShowing()) {
+                pDialog.dismiss();
+            }
+
+            if (json != null) {
+                //Toast.makeText(context, json.toString(),
+                //      Toast.LENGTH_LONG).show();
+
+                try {
+                    success = json.getInt(TAG_SUCCESS);
+                    message = json.getString(TAG_MESSAGE);
+                    current_balance = json.getString("balance");
+                } catch (JSONException e) {
+                    Log.d("err1","here2");
+                    e.printStackTrace();
+                }
+            }
+
+            if (success == 1) {
+                Date date = new Date();
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy h:mm:ss a");
+                String fDate = sdf.format(date);// 12/01/2011 4:48:16 PM
+                chatResponseDisplay("Your account balance at "+fDate+" is Rs."+current_balance, 125, false);
+            }else{
+                Log.d("Failure", message);
+            }
+        }
+
+    }
     class RechargeAndBill extends AsyncTask<String, String, JSONObject> {
         JSONParser jsonParser = new JSONParser();
 
