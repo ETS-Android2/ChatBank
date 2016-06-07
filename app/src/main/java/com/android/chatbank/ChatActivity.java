@@ -51,6 +51,7 @@ public class ChatActivity extends AppCompatActivity {
     private BankServices bks;
     private static final String BOTNAME = "chatbank";
     private String path,clientResponse,response;
+
     private BankDbHelper dbHelper;
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     final static String PREFS_NAME = "MyPrefsFile";
@@ -429,11 +430,9 @@ public class ChatActivity extends AppCompatActivity {
             case "ab":
                 bks.dispAccountBalance();
                 break;
-            case "k":
-                String no="3";
-                //sc.next();
-                String what="y";
-                //sc.next();
+            case "as":
+                String no=sc.next();
+                String what=sc.next();
                 bks.dispAccountStatements(no,what);
                 break;
 
@@ -509,14 +508,11 @@ public class ChatActivity extends AppCompatActivity {
 
         adapter = new ChatAdapter(ChatActivity.this, new ArrayList<ChatMessage>());
         messagesContainer.setAdapter(adapter);
-
         Log.d("trial","Trying....");
-
         for(int i=0; i<chatHistory.size(); i++) {
             ChatMessage message = chatHistory.get(i);
             displayMessage(message);
         }
-
     }
 
 

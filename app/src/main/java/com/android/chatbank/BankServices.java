@@ -35,7 +35,7 @@ public class BankServices extends ChatActivity{
     private Activity context;
     private CountDownLatch latch;
     private static final String CPIN = "123456";
-
+    private static final String ACCOUNT_NUMBER="ABC123";
     private BankDbHelper dbHelper;
    // private EditText cpin_input;
     private boolean cpinConfirmFlag = false,loop=true;
@@ -105,7 +105,7 @@ public class BankServices extends ChatActivity{
 
 
 
-    public void displayMessage(ChatMessage message) {
+   // public void displayMessage(ChatMessage message) {
     public void displayMessageAndInsert(ChatMessage message) {
         cAdapter.add(message);
         cAdapter.notifyDataSetChanged();
@@ -164,12 +164,6 @@ public class BankServices extends ChatActivity{
 
                                 //cpinConfirmFlag = true;
                                 switch (par[0]) {
-                                    case "r":
-                                        new RechargeAndBill().execute(par[1]);
-                                        break;
-                                    case "tr":
-                                        new MoneyTransfer().execute(par[1], par[2]);
-                                        break;
                                     case "ab":
                                         new AccountBalance().execute();
                                         break;
@@ -206,10 +200,6 @@ public class BankServices extends ChatActivity{
                             }
                         }
                     });
-
-
-
-
 
     }
 
@@ -265,7 +255,7 @@ public class BankServices extends ChatActivity{
 
                 HashMap<String, String> params = new HashMap<>();
 
-                params.put("acc_no",ChatActivity.ACCOUNT_NUMBER);
+                params.put("acc_no",ACCOUNT_NUMBER);
                 params.put("no_of",args[0]);
                 params.put("what",args[1]);
                 Log.d("request", "starting");
@@ -353,7 +343,7 @@ catch (JSONException e){
 
                 HashMap<String, String> params = new HashMap<>();
 
-                params.put("acc_no",ChatActivity.ACCOUNT_NUMBER);
+                params.put("acc_no",ACCOUNT_NUMBER);
                 Log.d("request", "starting");
                 Log.d("request1",params.toString());
 
