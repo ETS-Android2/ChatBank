@@ -26,12 +26,21 @@
             android:label="@string/title_activity_chat"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
-                <action android:name="android.intent.action.DATE_CHANGED"></action>
+                <action android:name="android.intent.action.DATE_CHANGED"/>
             </intent-filter>
         </activity>
         <activity
             android:name=".SettingActivity"
             android:label="@string/title_activity_setting"
+            android:parentActivityName=".ChatActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.android.chatbank.ChatActivity"/>
+        </activity>
+        <activity
+            android:name=".HelpActivity"
+            android:label="@string/title_activity_help"
             android:parentActivityName=".ChatActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data

@@ -36,8 +36,6 @@ import java.util.Date;
 import java.util.Scanner;
 
 public class ChatActivity extends AppCompatActivity {
-    static  String ACCOUNT_NUMBER = "ABC123";
-    static  String CPIN = "123456";
 
     private BroadcastReceiver m_dateChangedReceiver;
     static int TRANSACTION_LIMIT;
@@ -144,6 +142,7 @@ public class ChatActivity extends AppCompatActivity {
         return true;
     }
 
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -163,6 +162,13 @@ public class ChatActivity extends AppCompatActivity {
             logout();
             return true;
         }
+        if (id == R.id.help_section) {
+
+            startActivity(new Intent(ChatActivity.this,HelpActivity.class));
+            return true;
+        }
+
+
 
 
 
@@ -182,8 +188,8 @@ public class ChatActivity extends AppCompatActivity {
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog,int id) {
                                 //logout to login page
-                                //ChatActivity.ACCOUNT_NUMBER = "";
-                                //ChatActivity.CPIN="";
+                                LoginActivity.ACCOUNT_NUMBER = "";
+                                LoginActivity.CPIN="";
                                 startActivity(new Intent(ChatActivity.this,LoginActivity.class));
 
                             }
@@ -418,14 +424,16 @@ public class ChatActivity extends AppCompatActivity {
                         break;
             case "cri": bks.creditCardInfo();
                         break;
+            case "cd":  bks.viewCustDetails();
+                        break;
             case "ab":
                 bks.dispAccountBalance();
                 break;
             case "k":
                 String no="3";
-                        //sc.next();
+                //sc.next();
                 String what="y";
-                    //sc.next();
+                //sc.next();
                 bks.dispAccountStatements(no,what);
                 break;
 
@@ -501,11 +509,14 @@ public class ChatActivity extends AppCompatActivity {
 
         adapter = new ChatAdapter(ChatActivity.this, new ArrayList<ChatMessage>());
         messagesContainer.setAdapter(adapter);
+
         Log.d("trial","Trying....");
+
         for(int i=0; i<chatHistory.size(); i++) {
             ChatMessage message = chatHistory.get(i);
             displayMessage(message);
         }
+
     }
 
 
