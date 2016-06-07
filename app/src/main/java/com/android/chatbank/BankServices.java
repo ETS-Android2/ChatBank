@@ -204,7 +204,9 @@ public class BankServices extends ChatActivity{
         return check;
     }
 
-
+    public void viewCustDetails() {
+        new CustomerDetails().execute();
+    }
 
 
     class RechargeAndBill extends AsyncTask<String, String, JSONObject> {
@@ -234,7 +236,7 @@ public class BankServices extends ChatActivity{
 
                 HashMap<String, String> params = new HashMap<>();
 
-                params.put("acc_no",ChatActivity.ACCOUNT_NUMBER);
+                params.put("acc_no",LoginActivity.ACCOUNT_NUMBER);
                 params.put("amt", args[0]);
                 amount = args[0];
                 Log.d("request", "starting");
@@ -280,7 +282,7 @@ public class BankServices extends ChatActivity{
 
             if (success == 1) {
                 chatResponseDisplay("Recharge done successfully!", 125, false);
-                chatResponseDisplay("Dear user, Rs."+amount+" has been debited from your account "+ChatActivity.ACCOUNT_NUMBER+" and your current balance is Rs."+current_balance, 126, false);
+                chatResponseDisplay("Dear user, Rs."+amount+" has been debited from your account "+LoginActivity.ACCOUNT_NUMBER+" and your current balance is Rs."+current_balance, 126, false);
                 incrementTransactionValue(Integer.parseInt(amount));
 
             }else{
@@ -316,7 +318,7 @@ public class BankServices extends ChatActivity{
 
                 HashMap<String, String> params = new HashMap<>();
 
-                params.put("acc_no",ChatActivity.ACCOUNT_NUMBER);
+                params.put("acc_no",LoginActivity.ACCOUNT_NUMBER);
                 params.put("ben_acc_no", args[0]);
                 params.put("amt", args[1]);
                 amount = args[1];
@@ -364,13 +366,13 @@ public class BankServices extends ChatActivity{
 
             if (success == 1) {
                 chatResponseDisplay("Rs. "+amount+" transfered to a/c. no.: "+ben_acc_no+" successfully!", 126, false);
-                chatResponseDisplay("Dear user, Rs." + amount + " has been debited from your account " + ChatActivity.ACCOUNT_NUMBER + " and your current balance is Rs." + current_balance, 126, false);
+                chatResponseDisplay("Dear user, Rs." + amount + " has been debited from your account " + LoginActivity.ACCOUNT_NUMBER + " and your current balance is Rs." + current_balance, 126, false);
 
             }else{
 
                 Log.d("Failure", message);
                 if(message.equals("Insufficient balance !"))
-                    chatResponseDisplay("Dear user, your account "+ChatActivity.ACCOUNT_NUMBER+" don't have sufficient amount to be transfered.Sorry the transfer cannot be completed !", 127, false);
+                    chatResponseDisplay("Dear user, your account "+LoginActivity.ACCOUNT_NUMBER+" don't have sufficient amount to be transfered.Sorry the transfer cannot be completed !", 127, false);
                 else if(message.equals("Invalid account number !"))
                     chatResponseDisplay("Sorry, the transfer cannot be completed due to invalid  account no.: "+ben_acc_no+". Please check the beneficiary account number !", 128, false);
                 else
@@ -407,7 +409,7 @@ public class BankServices extends ChatActivity{
 
                 HashMap<String, String> params = new HashMap<>();
 
-                params.put("acc_no",ChatActivity.ACCOUNT_NUMBER);
+                params.put("acc_no",LoginActivity.ACCOUNT_NUMBER);
 
                 Log.d("request", "starting");
                 Log.d("request1",params.toString());
@@ -461,7 +463,92 @@ public class BankServices extends ChatActivity{
                 chatResponseDisplay("Dear user,your Credit Card Details are as follows :\nCredit Card No.: "+credit_card_no+"\nExpiry Date : "+expiry_date+"\nCard Limit : Rs."+limit+"\nPayment Due : Rs."+payment_due, 125, false);
 
             }else{
+                chatResponseDisplay("Sorry sir,action cannot be completed due to some internal error! Please try again later.", 125, false);
+
+            }
+        }
+
+    }
+
+    class CustomerDetails extends AsyncTask<String, String, JSONObject> {
+        JSONParser jsonParser = new JSONParser();
+
+        private ProgressDialog pDialog;
+
+        private static final String LOGIN_URL = "http://"+LoginActivity.NETWORK_IP_ADDRESS+"/bank_cust_info.php";
+        private  String cust_name,cust_add,cust_phone;
+        private static final String TAG_SUCCESS = "success";
+        private static final String TAG_MESSAGE = "message";
+
+
+        @Override
+        protected void onPreExecute() {
+            pDialog = new ProgressDialog(context);
+            pDialog.setMessage("Attempting transaction...");
+            pDialog.setIndeterminate(false);
+            pDialog.setCancelable(true);
+            pDialog.show();
+        }
+
+        @Override
+        protected JSONObject doInBackground(String... args) {
+
+            try {
+
+                HashMap<String, String> params = new HashMap<>();
+
+                params.put("acc_no", LoginActivity.ACCOUNT_NUMBER);
+
+                Log.d("request", "starting");
+
+                JSONObject json = jsonParser.makeHttpRequest(LOGIN_URL, "POST", params);
+
+                if (json != null) {
+                    Log.d("JSON result", json.toString());
+
+                    return json;
+                }
+
+            } catch (Exception e) {
+                Log.d("ee1", "exception error");
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        protected void onPostExecute(JSONObject json) {
+
+            int success = 0;
+            String message = "";
+
+            if (pDialog != null && pDialog.isShowing()) {
+                pDialog.dismiss();
+            }
+
+            if (json != null) {
+                Toast.makeText(context, json.toString(),
+                      Toast.LENGTH_LONG).show();
+
+                try {
+                    success = json.getInt(TAG_SUCCESS);
+                    message = json.getString(TAG_MESSAGE);
+                    cust_name= json.getString("cust_name");
+                    cust_add= json.getString("cust_address");
+                    cust_phone= json.getString("cust_phone");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (success == 1) {
+                chatResponseDisplay("Yes sir,your name is :"+cust_name+"\nYou live at : "+cust_add+"\nContact number : "+cust_phone+"\nAccount no. : "+LoginActivity.ACCOUNT_NUMBER, 125, false);
+
+
+            }else{
                 Log.d("Failure", message);
+                chatResponseDisplay("Your Account no. : " + LoginActivity.ACCOUNT_NUMBER+"\nThat's all i can tell you due to some technical issue.", 125, false);
+
             }
         }
 

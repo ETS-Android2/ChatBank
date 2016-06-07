@@ -10,55 +10,52 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:background="@drawable/screen12"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.android.chatbank.LoginActivity"
     tools:showIn="@layout/activity_login">
 
 
-
-    <TextView
+    <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="@string/login"
-        android:id="@+id/textView"
-        android:textStyle="bold"
-        android:textSize="26dp"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="42dp"/>
+        android:id="@+id/imageView1"
+        android:src="@drawable/embed4"
+        android:layout_gravity="center_horizontal"/>
 
 
-    <android.support.design.widget.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
     <EditText
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="35dp"
         android:id="@+id/loginNumber"
         android:layout_marginTop="80dp"
+        android:hint="Account number"
+        android:textColor="#050505"
+        android:background="@drawable/login_input"
+        android:paddingLeft="10dp"
+        android:paddingRight="5dp"/>
 
-       />
-    </android.support.design.widget.TextInputLayout>
-
-    <android.support.design.widget.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
 
     <EditText
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="35dp"
         android:inputType="numberPassword"
         android:ems="10"
         android:id="@+id/loginPin"
-        android:layout_below="@+id/loginNumber"
-        android:layout_marginTop="42dp"/>
-   </android.support.design.widget.TextInputLayout>
+        android:hint="cPin"
+        android:layout_marginTop="42dp"
+        android:textColor="@color/colorPrimaryDark"
+        android:background="@drawable/login_input"
+        android:paddingLeft="10dp"
+        android:paddingRight="5dp"/>
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/loginButton"
         android:text="@string/login"
-        android:layout_marginTop="42dp"/>
+        android:layout_marginTop="42dp"
+        android:textColor="#ffffff"
+        android:background="@drawable/login_button"/>
 
 
 </LinearLayout>
