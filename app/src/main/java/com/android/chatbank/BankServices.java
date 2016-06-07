@@ -5,8 +5,9 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.AsyncTask;
-import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +35,8 @@ public class BankServices extends ChatActivity{
     private Activity context;
     private CountDownLatch latch;
     private static final String CPIN = "123456";
+
+    private BankDbHelper dbHelper;
    // private EditText cpin_input;
     private boolean cpinConfirmFlag = false,loop=true;
 
@@ -85,23 +88,39 @@ public class BankServices extends ChatActivity{
                 showConfirmDialogBox("tr",ben_acc_no,amt);
     }
 
+    public void creditCardInfo() {
+        showConfirmDialogBox("cri");
+    }
+
 
     public void chatResponseDisplay(String s, int i,boolean isMe) {
         ChatMessage chatResponse = new ChatMessage();
         chatResponse.setId(i);//dummy
         chatResponse.setMessage(s);
-        chatResponse.setDate(DateFormat.getDateTimeInstance().format(new Date()));
+        chatResponse.setDate(sdf.format(new Date()));
         chatResponse.setMe(isMe);
 
-        displayMessage(chatResponse);
+        displayMessageAndInsert(chatResponse);
     }
 
 
 
     public void displayMessage(ChatMessage message) {
+    public void displayMessageAndInsert(ChatMessage message) {
         cAdapter.add(message);
         cAdapter.notifyDataSetChanged();
         scroll();
+        dbHelper = new BankDbHelper(context);
+        SQLiteDatabase bankDb = dbHelper.getWritableDatabase();
+        long result = dbHelper.addChat(message,bankDb);
+        if(result<0)
+        {
+            Log.d("Error1","Error in inserting..");
+        }
+        else
+        {
+            Log.d("Success1","Chat message inserted successfully..");
+        }
     }
 
     private void scroll() {
@@ -157,6 +176,23 @@ public class BankServices extends ChatActivity{
                                     case "as":
                                         new AccountStatements().execute(par[1],par[2]);
                                         break;
+                                    case "r":
+                                                 int val = Integer.parseInt(par[1]);
+                                                 if (checkTransactionValue(val)) {
+
+                                                     new RechargeAndBill().execute(par[1]);
+                                                 } else
+                                                     chatResponseDisplay("Sorry sir, transaction limit for the day exceeded! Please increase the daily transaction limit in settings.", 125, false);
+                                                 break;
+                                    case "tr":
+                                                int valu = Integer.parseInt(par[2]);
+                                                if (checkTransactionValue(valu)) {
+                                                    new MoneyTransfer().execute(par[1], par[2]);
+                                                } else
+                                                    chatResponseDisplay("Sorry sir, transaction limit for the day exceeded! Please increase the daily transaction limit in settings.", 125, false);
+                                                break;
+                                    case "cri": new CreditCardInfo().execute();
+                                                break;
                                 }
                                 dialog.dismiss();
 
@@ -176,6 +212,27 @@ public class BankServices extends ChatActivity{
 
 
     }
+
+    void incrementTransactionValue(int value){
+        CURRENT_TRANSACTION_VALUE = CURRENT_TRANSACTION_VALUE + value;
+        Log.d("t_val", "Value is :" + CURRENT_TRANSACTION_VALUE);
+        SharedPreferences trChange = context.getSharedPreferences("TransactionChange", Context.MODE_PRIVATE);
+        SharedPreferences.Editor trChangeEitor = trChange.edit();
+        trChangeEitor.putInt("CurrentTransactionValue", CURRENT_TRANSACTION_VALUE);
+        trChangeEitor.commit();
+    }
+
+    boolean checkTransactionValue(int value){
+        boolean check = true;
+        CURRENT_TRANSACTION_VALUE+=value;
+        if(CURRENT_TRANSACTION_VALUE>TRANSACTION_LIMIT ){
+
+            check = false;
+        }
+        CURRENT_TRANSACTION_VALUE-=value;
+        return check;
+    }
+
 
 
     class AccountStatements extends AsyncTask<String, String, JSONObject> {
@@ -354,7 +411,7 @@ catch (JSONException e){
 
         private ProgressDialog pDialog;
 
-        private static final String LOGIN_URL = "http://192.168.0.104/bank_recharge_bill.php";
+        private static final String LOGIN_URL = "http://"+LoginActivity.NETWORK_IP_ADDRESS+"/bank_recharge_bill.php";
         private  String current_balance,amount;
         private static final String TAG_SUCCESS = "success";
         private static final String TAG_MESSAGE = "message";
@@ -423,6 +480,7 @@ catch (JSONException e){
             if (success == 1) {
                 chatResponseDisplay("Recharge done successfully!", 125, false);
                 chatResponseDisplay("Dear user, Rs."+amount+" has been debited from your account "+ChatActivity.ACCOUNT_NUMBER+" and your current balance is Rs."+current_balance, 126, false);
+                incrementTransactionValue(Integer.parseInt(amount));
 
             }else{
                 Log.d("Failure", message);
@@ -435,7 +493,7 @@ catch (JSONException e){
 
         private ProgressDialog pDialog;
 
-        private static final String LOGIN_URL = "http://192.168.0.104/bank_money_transfer.php";
+        private static final String LOGIN_URL = "http://"+LoginActivity.NETWORK_IP_ADDRESS+"/bank_money_transfer.php";
         private  String current_balance,amount,ben_acc_no;
         private static final String TAG_SUCCESS = "success";
         private static final String TAG_MESSAGE = "message";
@@ -505,7 +563,101 @@ catch (JSONException e){
 
             if (success == 1) {
                 chatResponseDisplay("Rs. "+amount+" transfered to a/c. no.: "+ben_acc_no+" successfully!", 126, false);
-                chatResponseDisplay("Dear user, Rs."+amount+" has been debited from your account "+ChatActivity.ACCOUNT_NUMBER+" and your current balance is Rs."+current_balance, 126, false);
+                chatResponseDisplay("Dear user, Rs." + amount + " has been debited from your account " + ChatActivity.ACCOUNT_NUMBER + " and your current balance is Rs." + current_balance, 126, false);
+
+            }else{
+
+                Log.d("Failure", message);
+                if(message.equals("Insufficient balance !"))
+                    chatResponseDisplay("Dear user, your account "+ChatActivity.ACCOUNT_NUMBER+" don't have sufficient amount to be transfered.Sorry the transfer cannot be completed !", 127, false);
+                else if(message.equals("Invalid account number !"))
+                    chatResponseDisplay("Sorry, the transfer cannot be completed due to invalid  account no.: "+ben_acc_no+". Please check the beneficiary account number !", 128, false);
+                else
+                    chatResponseDisplay("Sorry, the transfer cannot be completed due to some internal error! Try again later.", 129, false);
+            }
+        }
+
+    }
+
+
+    class CreditCardInfo extends AsyncTask<String, String, JSONObject> {
+        JSONParser jsonParser = new JSONParser();
+
+        private ProgressDialog pDialog;
+        private String credit_card_no,expiry_date,limit,payment_due;
+        private static final String LOGIN_URL = "http://"+LoginActivity.NETWORK_IP_ADDRESS+"/bank_card_info.php";
+        private static final String TAG_SUCCESS = "success";
+        private static final String TAG_MESSAGE = "message";
+
+
+        @Override
+        protected void onPreExecute() {
+            pDialog = new ProgressDialog(context);
+            pDialog.setMessage("Fetching data...");
+            pDialog.setIndeterminate(false);
+            pDialog.setCancelable(true);
+            pDialog.show();
+        }
+
+        @Override
+        protected JSONObject doInBackground(String... args) {
+
+            try {
+
+                HashMap<String, String> params = new HashMap<>();
+
+                params.put("acc_no",ChatActivity.ACCOUNT_NUMBER);
+
+                Log.d("request", "starting");
+                Log.d("request1",params.toString());
+
+                JSONObject json = jsonParser.makeHttpRequest(LOGIN_URL, "POST", params);
+
+                if (json != null) {
+                    Log.d("JSON result", json.toString());
+
+                    return json;
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        protected void onPostExecute(JSONObject json) {
+
+            int success = 0;
+            String message = "";
+
+            if (pDialog != null && pDialog.isShowing()) {
+                pDialog.dismiss();
+            }
+
+            if (json != null) {
+                Toast.makeText(context, json.toString(),
+                      Toast.LENGTH_LONG).show();
+
+                try {
+                    success = json.getInt(TAG_SUCCESS);
+                    message = json.getString(TAG_MESSAGE);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (success == 1) {
+                try {
+                    credit_card_no= json.getString("credit_card_no");
+                    expiry_date = json.getString("expiry_date");
+                    limit = json.getString("credit_limit");
+                    payment_due = json.getString("paymen_left");
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                chatResponseDisplay("Dear user,your Credit Card Details are as follows :\nCredit Card No.: "+credit_card_no+"\nExpiry Date : "+expiry_date+"\nCard Limit : Rs."+limit+"\nPayment Due : Rs."+payment_due, 125, false);
 
             }else{
                 Log.d("Failure", message);

@@ -18,7 +18,7 @@ import android.widget.Toast;
 public class SettingActivity extends AppCompatActivity {
 
     private static final String FIRST_STRING = "";
-    private static final String DEFAULT_STRING = "N/A";
+    static final String DEFAULT_STRING = "N/A";
     private SeekBar transactionLimitBar ;
     private EditText transactionLimit;
     private EditText fav_trans_1,fav_trans_2,fav_trans_3,fav_trans_4,fav_trans_5;

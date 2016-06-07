@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,6 +13,7 @@ import android.widget.Button;
 public class LoginActivity extends AppCompatActivity {
 
     private Button mloginBtn ;
+    static final String NETWORK_IP_ADDRESS = "192.168.0.102";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,6 +29,22 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(iToChat);
             }
         });
+    }
+
+    //2.0 and above
+    @Override
+    public void onBackPressed() {
+        moveTaskToBack(true);
+    }
+
+    // Before 2.0
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            moveTaskToBack(true);
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 
    /* @Override
